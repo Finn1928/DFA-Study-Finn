@@ -1,9 +1,13 @@
 DOCSDIR = docs
 SRC = src
+SCHEMAS = cohra2 ada_ohwb
 
 COHRA2_SCHEMA_DIR = $(SRC)/schema
 COHRA2_SCHEMA = $(COHRA2_SCHEMA_DIR)/cohra2.yaml
 COHRA2_DOCS_DIR = $(DOCSDIR)/cohra2
+
+ADA_OHWB_SCHEMA = $(SRC)/schema/ada_ohwb.yaml
+ADA_OHWB_DOCS_DIR = $(DOCSDIR)/ada_ohwb
 
 # --- linkml products --- #
 cohra2-jsonschema: $(COHRA2_SCHEMA)
@@ -24,21 +28,20 @@ clean-products:
 	find owl/ -type f -not -name 'README.md' -delete     
 
 # --- schema documentation --- #
-gendoc: $(DOCSDIR)
-# copy existing files (if they exist) 
-# note: there is no space after the ',' in ($(wildcard src/docs/*.md),)
-# condition is the true if the wildcard returns non-empty content (i.e, not equal)
-ifneq ($(wildcard src/docs/*.md),)
-	cp src/docs/*.md docs/
-endif
-ifneq ($(wildcard src/docs/images/*.*),)
-	cp src/docs/images/*.* docs/images
-endif
-# generate documentation
-	gen-doc -d $(DOCSDIR) $(COHRA2_SCHEMA)
+gendoc-%:
+	gen-doc -d $(DOCSDIR)/$* $(SRC)/schema/$*.yaml
+
+gendoc-all: $(SCHEMAS:%=gendoc-%)
+
+gendoc: gendoc-all
+	@mkdir -p docs/images
+	@if [ -n "$(wildcard src/docs/*.md)" ]; then cp src/docs/*.md docs/; fi
+	@if [ -n "$(wildcard src/docs/images/*.*)" ]; then cp src/docs/images/*.* docs/images; fi
 
 ## remove docs
 clean-docs:
 # don't delete README files
 	find docs/ -type f -not -name 'README.md' -delete     
 	find docs/images/ -type f -not -name 'README.md' -delete     
+
+.PHONY: gendoc gendoc-all gendoc-cohra2 gendoc-ada_ohwb clean-products clean-docs cohra2-jsonschema cohra2-owl
